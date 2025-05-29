@@ -1,7 +1,7 @@
 #include "diagnostic.h"
 
-DiagnosticQueue *create_diagnostic_queue() {
-    DiagnosticQueue *q = malloc(sizeof(DiagnosticQueue));
+struct diagnostic_queue *create_diagnostic_queue() {
+    struct diagnostic_queue *q = malloc(sizeof(struct diagnostic_queue));
     if (!q) return NULL;
 
     q->head = NULL;
@@ -10,10 +10,10 @@ DiagnosticQueue *create_diagnostic_queue() {
     return q;
 }
 
-int diagnostic_add(DiagnosticQueue *q, DiagnosticLevel level, uint16_t line, const char *fmt, ...) {
+int diagnostic_add(struct diagnostic_queue *q, enum diagnostic_level level, uint16_t line, const char *fmt, ...) {
     if (!q) return -1;
 
-    Diagnostic *d = malloc(sizeof(Diagnostic));
+    struct diagnostic *d = malloc(sizeof(struct diagnostic));
     if (!d) return -1;
 
     d->level = level;
@@ -37,10 +37,10 @@ int diagnostic_add(DiagnosticQueue *q, DiagnosticLevel level, uint16_t line, con
     return 0;
 }
 
-void diagnostic_print(DiagnosticQueue *q) {
+void diagnostic_print(struct diagnostic_queue *q) {
     if (!q) return;
 
-    Diagnostic *d = q->head;
+    struct diagnostic *d = q->head;
     while (d) {
         const char *level_str;
         switch (d->level) {
@@ -54,12 +54,12 @@ void diagnostic_print(DiagnosticQueue *q) {
     }
 }
 
-void diagnostic_free(DiagnosticQueue *q) {
+void diagnostic_free(struct diagnostic_queue *q) {
     if (!q) return;
 
-    Diagnostic *d = q->head;
+    struct diagnostic *d = q->head;
     while (d) {
-        Diagnostic *temp = d->next;
+        struct diagnostic *temp = d->next;
         free(d);
         d = temp;
     }

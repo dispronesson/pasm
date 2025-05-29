@@ -6,28 +6,28 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#define MSG_SIZE 128
+#define MAX_MSG_SIZE 128
 
-typedef enum DiagnosticLevel {
+enum diagnostic_level {
     DIAG_WARNING,
     DIAG_ERROR
-} DiagnosticLevel;
+};
 
-typedef struct Diagnostic {
-    DiagnosticLevel level;
+struct diagnostic {
+    enum diagnostic_level level;
     uint16_t line;
-    char msg[MSG_SIZE];
-    struct Diagnostic *next;
-} Diagnostic;
+    char msg[MAX_MSG_SIZE + 1];
+    struct diagnostic *next;
+};
 
-typedef struct DiagnosticQueue {
-    Diagnostic *head;
-    Diagnostic *tail;
-} DiagnosticQueue;
+struct diagnostic_queue {
+    struct diagnostic *head;
+    struct diagnostic *tail;
+};
 
-DiagnosticQueue *create_diagnostic_queue();
-int diagnostic_add(DiagnosticQueue *q, DiagnosticLevel level, uint16_t line, const char *fmt, ...);
-void diagnostic_print(DiagnosticQueue *q);
-void diagnostic_free(DiagnosticQueue *q);
+struct diagnostic_queue *create_diagnostic_queue();
+int diagnostic_add(struct diagnostic_queue *q, enum diagnostic_level level, uint16_t line, const char *fmt, ...);
+void diagnostic_print(struct diagnostic_queue *q);
+void diagnostic_free(struct diagnostic_queue *q);
 
 #endif //DIAGNOSTIC_H
