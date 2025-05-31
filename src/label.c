@@ -1,20 +1,27 @@
 #include "label.h"
 
-static int label_exists(struct label_table *label_tab, const char *name) {
-    for (size_t i = 0; i < label_tab->count; i++) {
-        if (strcmp(label_tab->labels[i].name, name) == 0) return 1;
+int label_exists(struct label_table *ltab, const char *name) {
+    for (size_t i = 0; i < ltab->count; i++) {
+        if (strcmp(ltab->labels[i].name, name) == 0) return 1;
     }
 
     return 0;
 }
 
-int label_add(struct label_table *label_tab, const char *name, size_t addr) {
-    if (label_tab->count >= MAX_LABEL_COUNT) return -1;
-    if (label_exists(label_tab, name)) return -2;
+int label_add(struct label_table *ltab, const char *name, size_t addr) {
+    if (ltab->count >= MAX_LABEL_COUNT) return -1;
 
-    snprintf(label_tab->labels[label_tab->count].name, MAX_LABEL_NAME + 1, "%s", name);
-    label_tab->labels[label_tab->count].addr = addr;
-    label_tab->count++;
+    snprintf(ltab->labels[ltab->count].name, MAX_LABEL_LENGTH + 1, "%s", name);
+    ltab->labels[ltab->count].addr = addr;
+    ltab->count++;
 
     return 0;
+}
+
+size_t get_label_addr(struct label_table *ltab, const char *name) {
+    for (size_t i = 0; i < ltab->count; i++) {
+        if (strcmp(ltab->labels[i].name, name) == 0) return ltab->labels[i].addr;
+    }
+
+    return (size_t)UINT64_MAX;
 }

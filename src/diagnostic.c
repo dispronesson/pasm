@@ -14,7 +14,7 @@ int diagnostic_add(struct diagnostic_queue *q, enum diagnostic_level level, uint
     if (!q) return -1;
 
     struct diagnostic *d = malloc(sizeof(struct diagnostic));
-    if (!d) return -1;
+    if (!d) return -2;
 
     d->level = level;
     d->line = line;
@@ -44,8 +44,8 @@ void diagnostic_print(struct diagnostic_queue *q) {
     while (d) {
         const char *level_str;
         switch (d->level) {
-            case DIAG_WARNING: level_str = "warning"; break;
-            case DIAG_ERROR: level_str = "error"; break;
+            case DIAGL_WARNING: level_str = "warning"; break;
+            case DIAGL_ERROR: level_str = "error"; break;
             default: level_str = "unknown"; break;
         }
 

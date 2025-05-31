@@ -9,8 +9,8 @@
 #define MAX_MSG_SIZE 128
 
 enum diagnostic_level {
-    DIAG_WARNING,
-    DIAG_ERROR
+    DIAGL_WARNING,
+    DIAGL_ERROR
 };
 
 struct diagnostic {
