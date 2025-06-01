@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_INSTR_COUNT 32768
 #define BASE_ADDR 0x200
@@ -138,6 +139,7 @@ struct instr_info {
         enum directive dir;
     };
     char mnemonic[8];
+    bool is_byte;
 };
 
 struct operand {
@@ -162,5 +164,16 @@ char *parse_label(char *label);
 void parse_instr(char *instr);
 int mnemonic_exists(struct instr_info *instruction, const char *mnemonic);
 void parse_operands(char *operands);
+bool parse_operand(char *op, struct operand *out);
+bool parse_immediate(char *imm, struct operand *out);
+bool parse_memory(char *mem, struct operand *out);
+bool parse_register(char *reg, struct operand *out);
+bool parse_indexed(char *text, struct operand *out);
+bool is_immediate(char *imm);
+bool is_register(char *reg);
+bool is_register_def(char *reg);
+bool is_autoinc(char *reg);
+bool is_autodec(char *reg);
+bool is_indexed(char *reg);
 
 #endif //PARSER_H

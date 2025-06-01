@@ -26,3 +26,7 @@ int is_valid_name(const char *str) {
     } 
     return 1;
 }
+
+bool starts_with(const char *s, const char *start) {
+    return strncmp(s, start, strlen(start)) == 0;
+}
