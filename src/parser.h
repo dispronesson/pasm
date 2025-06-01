@@ -8,6 +8,8 @@
 
 #define MAX_INSTR_COUNT 32768
 #define BASE_ADDR 0x200
+#define MAX_BUFFER_SIZE 256
+#define INSTRUCTIONS_SIZE (sizeof(instructions) / sizeof(instructions[0]))
 
 enum instr_type {
     INSTRT_DOUBLE,
@@ -93,6 +95,8 @@ enum instr_branch {
     INSTRB_BMI,
     INSTRB_BHI,
     INSTRB_BLOS,
+    INSTRB_BHIS,
+    INSTRB_BLO,
     INSTRB_BVC,
     INSTRB_BVS,
     INSTRB_BCC,
@@ -124,6 +128,18 @@ enum operand_type {
     OPT_MEM
 };
 
+struct instr_info {
+    enum instr_type type;
+    union {
+        enum instr_double instrd;
+        enum instr_single instrs;
+        enum instr_without instrw;
+        enum instr_branch instrb;
+        enum directive dir;
+    };
+    char mnemonic[8];
+};
+
 struct operand {
     enum addr_mode mode;
     enum operand_type type;
@@ -135,14 +151,7 @@ struct operand {
 };
 
 struct instr_entry {
-    enum instr_type type;
-    union {
-        enum instr_double instrd;
-        enum instr_single instrs;
-        enum instr_without instrw;
-        enum instr_branch instrb;
-        enum directive dir;
-    };
+    struct instr_info instr;
     struct operand op1;
     struct operand op2;
 };
@@ -150,5 +159,8 @@ struct instr_entry {
 int read_file(const char *filename);
 void parse_line(char *line);
 char *parse_label(char *label);
+void parse_instr(char *instr);
+int mnemonic_exists(struct instr_info *instruction, const char *mnemonic);
+void parse_operands(char *operands);
 
 #endif //PARSER_H
