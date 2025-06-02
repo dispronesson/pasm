@@ -101,8 +101,7 @@ enum instr_branch {
     INSTRB_BVC,
     INSTRB_BVS,
     INSTRB_BCC,
-    INSTRB_BCS,
-    INSTRB_SOB
+    INSTRB_BCS
 };
 
 enum directive {
@@ -162,18 +161,19 @@ int read_file(const char *filename);
 void parse_line(char *line);
 char *parse_label(char *label);
 void parse_instr(char *instr);
-int mnemonic_exists(struct instr_info *instruction, const char *mnemonic);
-void parse_operands(char *operands);
-bool parse_operand(char *op, struct operand *out);
-bool parse_immediate(char *imm, struct operand *out);
-bool parse_memory(char *mem, struct operand *out);
-bool parse_register(char *reg, struct operand *out);
-bool parse_indexed(char *text, struct operand *out);
+bool mnemonic_exists(struct instr_info *instruction, const char *mnemonic);
+int parse_operands(char *operands);
+int parse_operand(char *op, struct operand *out);
+int parse_immediate(char *imm, struct operand *out);
+int parse_memory(char *mem, struct operand *out);
+int parse_register(char *reg, struct operand *out);
+int parse_indexed(char *text, struct operand *out);
+int parse_branch(char *op, struct operand *out);
 bool is_immediate(char *imm);
+bool is_rn(char *reg, int offset);
 bool is_register(char *reg);
 bool is_register_def(char *reg);
 bool is_autoinc(char *reg);
 bool is_autodec(char *reg);
-bool is_indexed(char *reg);
 
 #endif //PARSER_H

@@ -9,7 +9,6 @@ struct instr_entry entry[MAX_INSTR_COUNT];
 uint32_t instrno;
 uint32_t lineno;
 size_t addr = BASE_ADDR;
-FILE *input;
 
 struct instr_info instructions[] = {
     { INSTRT_DOUBLE, INSTRD_MOV, "mov", false },
@@ -25,7 +24,7 @@ struct instr_info instructions[] = {
     { INSTRT_DOUBLE, INSTRD_ADD, "add", false },
     { INSTRT_DOUBLE, INSTRD_SUB, "sub", false },
     { INSTRT_DOUBLE, INSTRD_JSR, "jsr", false },
-    { INSTRT_SINGLE, INSTRS_JMP, "jmp" },
+    { INSTRT_SINGLE, INSTRS_JMP, "jmp", },
     { INSTRT_SINGLE, INSTRS_SWAB, "swab" },
     { INSTRT_SINGLE, INSTRS_CLR, "clr" },
     { INSTRT_SINGLE, INSTRS_CLRB, "clrb" },
@@ -51,7 +50,7 @@ struct instr_info instructions[] = {
     { INSTRT_SINGLE, INSTRS_ASRB, "asrb" },
     { INSTRT_SINGLE, INSTRS_ASL, "asl" },
     { INSTRT_SINGLE, INSTRS_ASLB, "aslb" },
-    { INSTRT_SINGLE, INSTRS_MTPS, "mtps" },
+    { INSTRT_SINGLE, INSTRS_MTPS, "mtps", false},
     { INSTRT_SINGLE, INSTRS_MFPS, "mfps" },
     { INSTRT_SINGLE, INSTRS_RTS, "rts" },
     { INSTRT_WITHOUT, INSTRW_CLC, "clc" },
@@ -84,7 +83,6 @@ struct instr_info instructions[] = {
     { INSTRT_BRANCH, INSTRB_BVS, "bvs" },
     { INSTRT_BRANCH, INSTRB_BCC, "bcc" },
     { INSTRT_BRANCH, INSTRB_BCS, "bcs" },
-    { INSTRT_BRANCH, INSTRB_SOB, "sob" },
     { INSTRT_DIRECTIVE, DIR_BYTE, "byte" },
     { INSTRT_DIRECTIVE, DIR_WORD, "word" },
     { INSTRT_DIRECTIVE, DIR_BLKB, "blkb" },
@@ -92,7 +90,7 @@ struct instr_info instructions[] = {
 };
 
 int read_file(const char *filename) {
-    input = fopen(filename, "r");
+    FILE *input = fopen(filename, "r");
     if (!input) return -1;
 
     char buffer[MAX_BUFFER_SIZE];
@@ -171,20 +169,23 @@ void parse_instr(char *instr) {
         return;
     }
 
+    addr += 2;
     instr += len;
     char *after_mnemonic = skip_spaces(instr);
-    parse_operands(after_mnemonic);
+    if (parse_operands(after_mnemonic) == -1) {
+        diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
+    }
 }
 
-int mnemonic_exists(struct instr_info *instruction, const char *mnemonic) {
+bool mnemonic_exists(struct instr_info *instruction, const char *mnemonic) {
     size_t len = strlen(mnemonic);
-    int flag = 0;
+    bool flag = false;
 
     for (int i = 0; i < INSTRUCTIONS_SIZE; i++) {
         if (len != strlen(instructions[i].mnemonic)) continue;
         if (memcmp(mnemonic, instructions[i].mnemonic, len) == 0) {
             *instruction = instructions[i];
-            flag = 1;
+            flag = true;
             break;
         }
     }
@@ -192,7 +193,7 @@ int mnemonic_exists(struct instr_info *instruction, const char *mnemonic) {
     return flag;
 }
 
-void parse_operands(char *operands) {
+int parse_operands(char *operands) {
     uint8_t op_count;
     char *op1, *op2;
     char *comma = strchr(operands, ',');
@@ -212,7 +213,7 @@ void parse_operands(char *operands) {
             char *after_space = skip_spaces(space + 1);
             if (*after_space != '\0' && *after_space != ';') {
                 diagnostic_add(dq, DIAGL_ERROR, lineno, "comma expected");
-                return;
+                return -2;
             }
         }
         op1 = operands;
@@ -221,21 +222,46 @@ void parse_operands(char *operands) {
         op_count = 0;
     }
 
-    addr += 2;
     enum instr_type type = entry[instrno].instr.type;
     if (type == INSTRT_DOUBLE && op_count != 2) {
         diagnostic_add(dq, DIAGL_ERROR, lineno, "2 operands expected");
-        return;
+        return -2;
     } else if ((type == INSTRT_SINGLE || type == INSTRT_BRANCH) && op_count != 1) {
         diagnostic_add(dq, DIAGL_ERROR, lineno, "1 operand expected");
-        return;
+        return -2;
     } else if (type == INSTRT_WITHOUT && op_count != 0) {
         diagnostic_add(dq, DIAGL_ERROR, lineno, "too many operands");
-        return;
+        return -2;
     }
+
+    switch (type) {
+        case INSTRT_DOUBLE:
+            if (parse_operand(op1, &entry[instrno].op1) == -1) return -1;
+            if (entry[instrno].instr.instrd == INSTRD_JSR && 
+                entry[instrno].op1.type != OPT_REG && entry[instrno].op1.mode != AMOD_REG) {
+                return -1;
+            }
+            if (parse_operand(op2, &entry[instrno].op2) == -1) return -1;
+            if (entry[instrno].op2.type == OPT_IMM) return -1;
+            break;
+        case INSTRT_SINGLE:
+            if (parse_operand(op1, &entry[instrno].op1) == -1) return -1;
+            if (entry[instrno].instr.instrs != INSTRS_MTPS && entry[instrno].op1.type == OPT_IMM) return -1;
+            if (entry[instrno].instr.instrs == INSTRS_RTS && 
+                entry[instrno].op1.type != OPT_REG && entry[instrno].op1.mode != AMOD_REG) {
+                return -1;
+            }
+            break;
+        case INSTRT_BRANCH:
+            if (parse_branch(op1, &entry[instrno].op1) == -1) return -1;
+            break;
+    }
+
+    instrno++;
+    return 0;
 }
 
-bool parse_operand(char *op, struct operand *out) {
+int parse_operand(char *op, struct operand *out) {
     char *op_dup[32];
     snprintf(op_dup, sizeof(op_dup), "%s", op);
     str_to_lower(op);
@@ -243,43 +269,64 @@ bool parse_operand(char *op, struct operand *out) {
     if (starts_with(op, "@#")) {
         out->mode = AMOD_INC_DEF;
         out->regno = 7;
+        addr += 2;
         if (is_immediate(op_dup + 2)) return parse_immediate(op_dup + 2, out);
-        else return parse_memory(op + 2, out);
+        return parse_memory(op + 2, out);
     } 
     if (*op == '#') {
         out->mode = AMOD_INC;
         out->regno = 7;
+        addr += 2;
         if (is_immediate(op_dup + 1)) return parse_immediate(op_dup + 1, out);
-        else return parse_memory(op + 1, out);
+        return parse_memory(op + 1, out);
     }
     if (*op == '@') {
+        if (is_autoinc(op + 1)) {
+            out->mode = AMOD_INC_DEF;
+            return parse_register(op + 2, out);
+        }
+        if (is_autodec(op + 1)) {
+            out->mode = AMOD_DEC_DEF;
+            return parse_register(op + 3, out);
+        }
         out->mode = AMOD_IND_DEF;
-        if (is_autoinc(op + 1)) return parse_register(op + 2, out);
-        if (is_autodec(op + 1)) return parse_register(op + 3, out);
+        addr += 2;
         return parse_indexed(op + 1, out);
     }
+    if (is_register(op)) {
+        out->mode = AMOD_REG;
+        return parse_register(op, out);
+    }
+    if (is_register_def(op)) {
+        out->mode = AMOD_REG_DEF;
+        return parse_register(op + 1, out);
+    }
+    if (is_autoinc(op)) {
+        out->mode = AMOD_INC;
+        return parse_register(op + 1, out);
+    }
+    if (is_autodec(op)) {
+        out->mode = AMOD_DEC;
+        return parse_register(op + 2, out);
+    }
+    
+    out->mode = AMOD_IND;
+    addr += 2;
+    return parse_indexed(op, out);
 }
 
-bool parse_immediate(char *imm, struct operand *out) {
+int parse_immediate(char *imm, struct operand *out) {
     if (*imm == '"') {
         imm++;
         char *quot_mark = strchr(imm, '"');
-        if (!quot_mark) {
-            diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
-            return false;
-        }
+        if (!quot_mark) return -1;
 
         *quot_mark = '\0';
-        if (*(quot_mark + 1) != '\0') {
-            diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
-            return false;
-        } else if (strlen(imm) != 1) {
-            diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
-            return false;
-        }
+        if (*(quot_mark + 1) != '\0') return -1;
+        if (strlen(imm) != 1) return -1;
 
-        out->imm = (uint16_t)*imm;
-    } else if ((*imm >= '0' && *imm <= '9') || *imm == '-') {
+        out->imm = (uint16_t)(unsigned char)*imm;
+    } else if (*imm == '-' || isdigit((unsigned char)*imm)) {
         str_to_lower(imm);
         int base = 8;
         size_t len = strlen(imm);
@@ -292,10 +339,7 @@ bool parse_immediate(char *imm, struct operand *out) {
 
         char *end;
         int64_t value = strtoll(imm, &end, base);
-        if (*end != '\0') {
-            diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
-            return false;
-        }
+        if (*end != '\0') return false;
             
         if (entry[instrno].instr.is_byte && (value < INT8_MIN || value > INT8_MAX)) {
             diagnostic_add(dq, DIAGL_WARNING, lineno, "overlow in immediate value");
@@ -309,84 +353,97 @@ bool parse_immediate(char *imm, struct operand *out) {
     }
 
     out->type = OPT_IMM;
-    return true;
+    return 0;
 }
 
-bool parse_memory(char *mem, struct operand *out) {
-    if (!is_valid_name(mem)) {
-        diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
-        return false;
-    }
+int parse_memory(char *mem, struct operand *out) {
+    if (!is_valid_name(mem)) return -1;
 
     if (label_exists(&ltab, mem)) {
         size_t label_addr = get_label_addr(&ltab, mem);
         out->mem_off = (uint16_t)label_addr;
         out->type = OPT_MEM;
-        return true;
-    } else {
-        diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
-        return false;
+        return 0;
     }
+
+    return -1;
 }
 
-bool parse_register(char *reg, struct operand *out) {
+int parse_register(char *reg, struct operand *out) {
     if (starts_with(reg, "sp")) out->regno = 6;
     else if (starts_with(reg, "pc")) out->regno = 7;
-    else out->regno = *(reg + 1) - '0';
+    else out->regno = (unsigned char)*(reg + 1) - '0';
     out->type = OPT_REG;
-    return true;
+    return 0;
 }
 
-bool parse_indexed(char *text, struct operand *out) {
-    if (*text < '0' || *text > '9') {
-        bool flag = parse_memory(text, out);
-        if (flag) out->mem_off -= addr + 2;
-        return flag;
-    } else {
+int parse_indexed(char *number, struct operand *out) {
+    int res = 0;
+
+    if (is_immediate(number)) {
         char *end;
-        int64_t value = strtoll(text, &end, 8);
-        if (*end == '\0' || !is_register_def(*end)) {
-            diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
-            return false;
-        }
+        int64_t value = strtoll(number, &end, 8);
+        if (*end == '\0' || !is_register_def(*end)) return -1;
         out->mem_off = (uint16_t)value;
         parse_register(end + 1, out);
-        return true;
+    } else {
+        res = parse_memory(number, out);
+        if (res == 0) out->mem_off -= addr;
+    }
+
+    return res;
+}
+
+int parse_branch(char *op, struct operand *out) {
+    if (is_immediate(op)) {
+        char *end;
+        int64_t value = strtoll(op, &end, 8);
+        if (*end != '\0') return -1;
+        if (value < INT8_MIN || value > INT8_MAX) {
+            diagnostic_add(dq, DIAGL_ERROR, lineno, "too long branch, use jmp instead");
+            return -2;
+        }
+        out->mem_off = (uint16_t)value;
+    } else {
+        int res = parse_memory(op, out);
+        if (res == 0) {
+            int16_t offset = (int16_t)out->mem_off;
+            offset -= addr;
+            offset /= 2;
+            if (offset < INT8_MIN || offset > INT8_MAX) {
+                diagnostic_add(dq, DIAGL_ERROR, lineno, "too long branch, use jmp instead");
+                return -2;
+            }
+            out->mem_off = (uint16_t)offset;
+        }
+        return res;
     }
 }
 
 bool is_immediate(char *imm) {
-    return *imm == '"' || *imm == '-' || (*imm >= 0 && *imm <= 9);
+    return imm[0] == '"' || imm[0] == '-' || isdigit((unsigned char)imm[0]);
+}
+
+bool is_rn(char *reg, int offset) {
+    return reg[offset] == 'r' && reg[offset + 1] >= '0' && reg[offset + 1] <= '7';
 }
 
 bool is_register(char *reg) {
-    return (reg[0] == 'r' && reg[1] >= '0' && reg[1] <= '7' && reg[2] == '\0') ||
+    return (is_rn(reg, 0) && reg[2] == '\0') ||
            (strcmp(reg, "sp") == 0) || (strcmp(reg, "pc") == 0);
-}
+}   
 
 bool is_register_def(char *reg) {
-    return (reg[0] == '(' && reg[1] == 'r' && reg[2] >= '0' && reg[2] <= '7' &&
-           reg[3] == ')' && reg[4] == '\0') || (strcmp(reg, "(sp)") == 0) ||
-           (strcmp(reg, "(pc)") == 0);
+    return (reg[0] == '(' && is_rn(reg, 1) && reg[3] == ')' && reg[4] == '\0') ||
+           (strcmp(reg, "(sp)") == 0) || (strcmp(reg, "(pc)") == 0);
 }
 
 bool is_autoinc(char *reg) {
-    return (reg[0] == '(' && reg[1] == 'r' && reg[2] >= '0' && reg[2] <= '7' &&
-           reg[3] == ')' && reg[4] == '+' && reg[5] == '\0') || (strcmp(reg, "(sp)+") == 0) ||
-           (strcmp(reg, "(pc)+") == 0);
+    return (reg[0] == '(' && is_rn(reg, 1) && reg[3] == ')' && reg[4] == '+' && reg[5] == '\0') || 
+           (strcmp(reg, "(sp)+") == 0) || (strcmp(reg, "(pc)+") == 0);
 }
 
 bool is_autodec(char *reg) {
-    return (reg[0] == '-' && reg[1] == '(' && reg[2] == 'r' && reg[3] >= '0' && reg[3] <= '7' &&
-           reg[4] == ')' && reg[5] == '\0') || (strcmp(reg, "-(sp)") == 0) ||
-           (strcmp(reg, "-(pc)") == 0);
-}
-
-bool is_indexed(char *reg) {
-    char *end;
-    int64_t value = strtoll(reg, &end, 8);
-    if (*end == '\0') return false;
-
-    reg = end;
-    return is_register_def(reg);
+    return (reg[0] == '-' && reg[1] == '(' && is_rn(reg, 2) && reg[4] == ')' && reg[5] == '\0') || 
+           (strcmp(reg, "-(sp)") == 0) || (strcmp(reg, "-(pc)") == 0);
 }

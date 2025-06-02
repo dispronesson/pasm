@@ -1,11 +1,11 @@
 #include "label.h"
 
-int label_exists(struct label_table *ltab, const char *name) {
+bool label_exists(struct label_table *ltab, const char *name) {
     for (size_t i = 0; i < ltab->count; i++) {
-        if (strcmp(ltab->labels[i].name, name) == 0) return 1;
+        if (strcmp(ltab->labels[i].name, name) == 0) return true;
     }
 
-    return 0;
+    return false;
 }
 
 int label_add(struct label_table *ltab, const char *name, size_t addr) {

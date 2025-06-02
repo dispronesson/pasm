@@ -1,6 +1,6 @@
 #include "diagnostic.h"
 
-int has_err;
+static bool has_err = false;
 
 struct diagnostic_queue *create_diagnostic_queue() {
     struct diagnostic_queue *q = malloc(sizeof(struct diagnostic_queue));
@@ -69,13 +69,13 @@ void diagnostic_free(struct diagnostic_queue *q) {
     free(q);
 }
 
-int has_errors(struct diagnostic_queue *q) {
-    if (has_err) return 1;
+bool has_errors(struct diagnostic_queue *q) {
+    if (has_err) return true;
 
     struct diagnostic *d = q->head;
     while (d) {
         if (d->level == DIAGL_ERROR) {
-            has_err = 1;
+            has_err = true;
             break;
         }
         d = d->next;

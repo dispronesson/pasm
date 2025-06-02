@@ -19,12 +19,12 @@ char *skip_spaces(char *str) {
     return str; 
 }
 
-int is_valid_name(const char *str) {
-    if (!isalpha((unsigned char)str[0]) && str[0] != '_') return 0;
+bool is_valid_name(const char *str) {
+    if (!isalpha((unsigned char)str[0]) && str[0] != '_') return false;
     for (int i = 1; str[i]; i++) {
-        if (!isalnum((unsigned char)str[i]) && str[i] != '_') return 0;
+        if (!isalnum((unsigned char)str[i]) && str[i] != '_') return false;
     } 
-    return 1;
+    return true;
 }
 
 bool starts_with(const char *s, const char *start) {

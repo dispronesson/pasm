@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #define MAX_LABEL_COUNT 512
 #define MAX_LABEL_LENGTH 16
@@ -20,7 +21,7 @@ struct label_table {
     size_t count;
 };
 
-int label_exists(struct label_table *ltab, const char *name);
+bool label_exists(struct label_table *ltab, const char *name);
 int label_add(struct label_table *ltab, const char *name, size_t addr);
 size_t get_label_addr(struct label_table *ltab, const char *name);
 
