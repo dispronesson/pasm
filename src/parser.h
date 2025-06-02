@@ -10,7 +10,11 @@
 #define MAX_INSTR_COUNT 32768
 #define BASE_ADDR 0x200
 #define MAX_BUFFER_SIZE 256
-#define INSTRUCTIONS_SIZE (sizeof(instructions) / sizeof(instructions[0]))
+
+extern struct instr_entry entry[MAX_INSTR_COUNT];
+extern uint32_t instrno;
+extern struct instr_info instructions[];
+extern instructions_size;
 
 enum instr_type {
     INSTRT_DOUBLE,
@@ -138,6 +142,7 @@ struct instr_info {
         enum directive dir;
     };
     char mnemonic[8];
+    uint16_t opcode;
     bool is_byte;
 };
 
