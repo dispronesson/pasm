@@ -51,7 +51,7 @@ struct instr_info instructions[] = {
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ASRB, .mnemonic = "asrb", .opcode = 01062, .is_byte = true },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ASL, .mnemonic = "asl", .opcode = 00063, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ASLB, .mnemonic = "aslb", .opcode = 01063, .is_byte = true },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_MTPS, .mnemonic = "mtps", .opcode = 01064, false},
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_MTPS, .mnemonic = "mtps", .opcode = 01064, .is_byte = false},
     { .type = INSTRT_SINGLE, .instrs = INSTRS_MFPS, .mnemonic = "mfps", .opcode = 01067, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_RTS, .mnemonic = "rts", .opcode = 000020, .is_byte = false },
     { .type = INSTRT_WITHOUT, .instrw = INSTRW_CLC, .mnemonic = "clc", .opcode = 0000241, .is_byte = false },
@@ -84,10 +84,10 @@ struct instr_info instructions[] = {
     { .type = INSTRT_BRANCH, .instrb = INSTRB_BVS, .mnemonic = "bvs", .opcode = 0205, .is_byte = false },
     { .type = INSTRT_BRANCH, .instrb = INSTRB_BCC, .mnemonic = "bcc", .opcode = 0206, .is_byte = false },
     { .type = INSTRT_BRANCH, .instrb = INSTRB_BCS, .mnemonic = "bcs", .opcode = 0207, .is_byte = false },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_BYTE, .mnemonic = "byte", .is_byte = true },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_WORD, .mnemonic = "word", .is_byte = false },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKB, .mnemonic = "blkb", .is_byte = true },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKW, .mnemonic = "blkw", .is_byte = false }
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_BYTE, .mnemonic = "byte", .opcode = 0, .is_byte = true },
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_WORD, .mnemonic = "word", .opcode = 0, .is_byte = false },
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKB, .mnemonic = "blkb", .opcode = 0, .is_byte = true },
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKW, .mnemonic = "blkw", .opcode = 0, .is_byte = false }
 };
 
 int read_file(const char *filename) {
@@ -112,6 +112,8 @@ int read_file(const char *filename) {
 
         parse_line(line);
     }
+
+    fclose(input);
 
     return 0;
 }
@@ -224,6 +226,8 @@ int parse_operands(char *operands) {
         op_count = 0;
     }
 
+    
+
     enum instr_type type = entry[instrno].instr.type;
     if (type == INSTRT_DOUBLE && op_count != 2) {
         diagnostic_add(dq, DIAGL_ERROR, lineno, "2 operands expected");
@@ -257,6 +261,8 @@ int parse_operands(char *operands) {
         case INSTRT_BRANCH:
             if (parse_branch(op1, &entry[instrno].op1) == -1) return -1;
             break;
+        case INSTRT_WITHOUT: break;
+        case INSTRT_DIRECTIVE: break;
     }
 
     instrno++;
@@ -264,7 +270,7 @@ int parse_operands(char *operands) {
 }
 
 int parse_operand(char *op, struct operand *out) {
-    char *op_dup[32];
+    char op_dup[32];
     snprintf(op_dup, sizeof(op_dup), "%s", op);
     str_to_lower(op);
 
@@ -341,7 +347,7 @@ int parse_immediate(char *imm, struct operand *out) {
 
         char *end;
         int64_t value = strtoll(imm, &end, base);
-        if (*end != '\0') return false;
+        if (*end != '\0') return -1;
             
         if (entry[instrno].instr.is_byte && (value < INT8_MIN || value > INT8_MAX)) {
             diagnostic_add(dq, DIAGL_WARNING, lineno, "overlow in immediate value");
@@ -385,10 +391,11 @@ int parse_indexed(char *number, struct operand *out) {
     if (is_immediate(number)) {
         char *end;
         int64_t value = strtoll(number, &end, 8);
-        if (*end == '\0' || !is_register_def(*end)) return -1;
+        if (*end == '\0' || !is_register_def(end)) return -1;
         out->mem_off = (uint16_t)value;
         parse_register(end + 1, out);
     } else {
+        out->regno = 7;
         res = parse_memory(number, out);
         if (res == 0) out->mem_off -= addr;
     }
@@ -406,6 +413,7 @@ int parse_branch(char *op, struct operand *out) {
             return -2;
         }
         out->mem_off = (uint16_t)value;
+        return 0;
     } else {
         int res = parse_memory(op, out);
         if (res == 0) {

@@ -26,10 +26,11 @@ int main_output(char *filename) {
             case INSTRT_WITHOUT:
                 output[cur_instr++] = output_instrw(instruction->instrw);
                 break;
+            case INSTRT_DIRECTIVE: break;
         }
     }
 
-    write(fd, output, cur_instr);
+    write(fd, output, cur_instr * sizeof(uint16_t));
     close(fd);
 
     return 0;
@@ -110,7 +111,7 @@ uint16_t output_instrs(enum instr_single type, struct operand *op) {
 }
 
 uint16_t output_instrb(enum instr_branch type, struct operand *op) {
-    uint16_t bin_code = (op->mem_off & 0x0F);
+    uint16_t bin_code = (op->mem_off & 0xFF);
     uint16_t opcode;
 
     switch (type) {
@@ -153,6 +154,7 @@ uint16_t output_instrw(enum instr_without type) {
         case INSTRW_HALT: return get_opcode("halt");
         case INSTRW_WAIT: return get_opcode("wait");
         case INSTRW_NOP: return get_opcode("nop");
+        default: return UINT16_MAX;
     }
 }
 

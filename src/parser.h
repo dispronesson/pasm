@@ -11,11 +11,6 @@
 #define BASE_ADDR 0x200
 #define MAX_BUFFER_SIZE 256
 
-extern struct instr_entry entry[MAX_INSTR_COUNT];
-extern uint32_t instrno;
-extern struct instr_info instructions[];
-extern instructions_size;
-
 enum instr_type {
     INSTRT_DOUBLE,
     INSTRT_SINGLE,
@@ -161,6 +156,12 @@ struct instr_entry {
     struct operand op1;
     struct operand op2;
 };
+
+extern struct diagnostic_queue *dq;
+extern struct instr_entry entry[MAX_INSTR_COUNT];
+extern uint32_t instrno;
+extern struct instr_info instructions[];
+extern uint32_t instructions_size;
 
 int read_file(const char *filename);
 void parse_line(char *line);
