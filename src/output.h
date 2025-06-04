@@ -15,5 +15,7 @@ uint16_t output_instrw(enum instr_without type);
 uint8_t addr_mode(struct operand *op);
 uint16_t get_opcode(const char *mnemonic);
 void extra_instr(struct operand *op);
+int write_le16(int fd, uint16_t word);
+uint8_t calculate_checksum(uint16_t len, uint16_t addr);
 
 #endif //OUTPUT_H

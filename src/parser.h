@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #define MAX_INSTR_COUNT 32768
-#define BASE_ADDR 0x200
+#define BASE_ADDR 01000
 #define MAX_BUFFER_SIZE 256
 
 enum instr_type {

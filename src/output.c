@@ -30,9 +30,19 @@ int main_output(char *filename) {
         }
     }
 
+    write_le16(fd, 0x0001);
+    write_le16(fd, cur_instr * sizeof(uint16_t) + 6);
+    write_le16(fd, 01000);
     write(fd, output, cur_instr * sizeof(uint16_t));
-    close(fd);
+    uint8_t checksum = calculate_checksum(cur_instr * sizeof(uint16_t) + 6, 01000);
+    write(fd, &checksum, sizeof(uint8_t));
 
+    write_le16(fd, 0x0001);
+    write_le16(fd, 0x0006);
+    write_le16(fd, 01000);
+
+    close(fd);
+    
     return 0;
 }
 
@@ -196,4 +206,33 @@ void extra_instr(struct operand *op) {
             output[cur_instr++] = op->mem_off;
         }
     }
+}
+
+int write_le16(int fd, uint16_t word) {
+    uint8_t bytes[2];
+    bytes[0] = word & 0xFF;
+    bytes[1] = (word >> 8) & 0xFF;
+
+    ssize_t written = write(fd, bytes, 2);
+    return (written == 2) ? 0 : -1;
+}
+
+uint8_t calculate_checksum(uint16_t len, uint16_t addr) {
+    uint8_t sum = 0;
+
+    sum += 0x01;
+    sum += 0x00;
+
+    sum += len & 0xFF;
+    sum += (len >> 8) & 0xFF;
+
+    sum += addr & 0xFF;
+    sum += (addr >> 8) & 0xFF;
+
+    for (uint32_t i = 0; i < cur_instr; i++) {
+        sum += output[i] & 0xFF;
+        sum += (output[i] >> 8) & 0xFF;
+    }
+
+    return (uint8_t)(-sum);
 }

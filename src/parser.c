@@ -107,8 +107,9 @@ int read_file(const char *filename) {
 
         lineno++;
         replace_char(buffer, '\t', ' ');
+        replace_char(buffer, ';', '\0');
         char *line = skip_spaces(buffer);
-        if (line[0] == '\0' || line[0] == ';') continue;
+        if (line[0] == '\0') continue;
 
         parse_line(line);
     }
@@ -121,7 +122,7 @@ int read_file(const char *filename) {
 void parse_line(char *line) {
     char *after_label = parse_label(line);
     if (after_label) {
-        if (*after_label == '\0' || *after_label == ';') return;
+        if (*after_label == '\0') return;
         else line = after_label;
     }
 
@@ -210,12 +211,12 @@ int parse_operands(char *operands) {
         while (*after_comma != ' ' && *after_comma != '\0') after_comma++;
         *after_comma = '\0';
         op_count = 2;
-    } else if (*operands != '\0' && *operands != ';') {
+    } else if (*operands != '\0') {
         char *space = strchr(operands, ' ');
         if (space) {
             *space = '\0';
             char *after_space = skip_spaces(space + 1);
-            if (*after_space != '\0' && *after_space != ';') {
+            if (*after_space != '\0') {
                 diagnostic_add(dq, DIAGL_ERROR, lineno, "comma expected");
                 return -2;
             }
@@ -225,8 +226,6 @@ int parse_operands(char *operands) {
     } else {
         op_count = 0;
     }
-
-    
 
     enum instr_type type = entry[instrno].instr.type;
     if (type == INSTRT_DOUBLE && op_count != 2) {
@@ -248,11 +247,12 @@ int parse_operands(char *operands) {
                 return -1;
             }
             if (parse_operand(op2, &entry[instrno].op2) == -1) return -1;
-            if (entry[instrno].op2.type == OPT_IMM) return -1;
+            if (entry[instrno].op2.type == OPT_IMM && entry[instrno].op2.mode == AMOD_INC) return -1;
             break;
         case INSTRT_SINGLE:
             if (parse_operand(op1, &entry[instrno].op1) == -1) return -1;
-            if (entry[instrno].instr.instrs != INSTRS_MTPS && entry[instrno].op1.type == OPT_IMM) return -1;
+            if (entry[instrno].instr.instrs != INSTRS_MTPS && entry[instrno].op1.type == OPT_IMM &&
+                entry[instrno].op1.mode == AMOD_INC) return -1;
             if (entry[instrno].instr.instrs == INSTRS_RTS && 
                 entry[instrno].op1.type != OPT_REG && entry[instrno].op1.mode != AMOD_REG) {
                 return -1;
@@ -349,11 +349,15 @@ int parse_immediate(char *imm, struct operand *out) {
         int64_t value = strtoll(imm, &end, base);
         if (*end != '\0') return -1;
             
-        if (entry[instrno].instr.is_byte && (value < INT8_MIN || value > INT8_MAX)) {
-            diagnostic_add(dq, DIAGL_WARNING, lineno, "overlow in immediate value");
+        if (entry[instrno].instr.is_byte) {
+            if (value < -128 || value > 255) {
+                diagnostic_add(dq, DIAGL_WARNING, lineno, "overflow in 8-bit immediate value");
+            }
             value &= 0xFF;
-        } else if (!entry[instrno].instr.is_byte && (value < INT16_MIN || value > INT16_MAX)) {
-            diagnostic_add(dq, DIAGL_WARNING, lineno, "overlow in immediate value");
+        } else {
+            if (value < -32768 || value > 65535) {
+                diagnostic_add(dq, DIAGL_WARNING, lineno, "overflow in 16-bit immediate value");
+            }
             value &= 0xFFFF;
         }
 
