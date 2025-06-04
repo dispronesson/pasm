@@ -59,10 +59,10 @@ void valid_args(int argc, char **argv) {
             case ':':
                 if (optopt == 'i') {
                     fprintf(stderr, "pasm: fatal: no input file specified\n");
-                    fprintf(stderr, "type pasm -h for help\n");
                 } else if (optopt == 'o') {
                     fprintf(stderr, "pasm: error: option '-o' requires an argument\n");
                 }
+                fprintf(stderr, "type pasm -h for help\n");
                 exit(EXIT_FAILURE);
                 break;
             case '?':
@@ -71,6 +71,7 @@ void valid_args(int argc, char **argv) {
                 } else {
                     fprintf(stderr, "pasm: error: unknown option '-%c'\n", optopt);
                 }
+                fprintf(stderr, "type pasm -h for help\n");
                 exit(EXIT_FAILURE);
             default: break;
         }

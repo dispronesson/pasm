@@ -22,7 +22,8 @@ struct label_table {
 };
 
 bool label_exists(struct label_table *ltab, const char *name);
-int label_add(struct label_table *ltab, const char *name, size_t addr);
+int label_add(struct label_table *ltab, const char *name);
+void set_label_addr(struct label_table *ltab, const char *name, size_t addr);
 size_t get_label_addr(struct label_table *ltab, const char *name);
 
 #endif //LABEL_H

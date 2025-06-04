@@ -26,7 +26,7 @@ int main_output(char *filename) {
             case INSTRT_WITHOUT:
                 output[cur_instr++] = output_instrw(instruction->instrw);
                 break;
-            case INSTRT_DIRECTIVE: break;
+            default: break;
         }
     }
 
@@ -164,12 +164,13 @@ uint16_t output_instrw(enum instr_without type) {
         case INSTRW_HALT: return get_opcode("halt");
         case INSTRW_WAIT: return get_opcode("wait");
         case INSTRW_NOP: return get_opcode("nop");
-        default: return UINT16_MAX;
     }
+
+    return UINT16_MAX;
 }
 
 uint8_t addr_mode(struct operand *op) {
-    uint8_t addrmode = 0;
+    uint8_t addrmode;
 
     switch (op->mode) {
         case AMOD_REG: addrmode = 0; break;

@@ -15,27 +15,18 @@ int main(int argc, char *argv[]) {
     dq = create_diagnostic_queue();
     if (!dq) {
         fprintf(stderr, "pasm: fatal: not enough memory\n");
-        return -1;
+        return 1;
     }
 
     if (read_file(input_file) == -1) {
         perror("pasm: fatal");
         diagnostic_free(dq);
-        return -1;
+        return 1;
     }
-
-    if (has_errors(dq)) {
-        diagnostic_print(dq);
-        diagnostic_free(dq);
-        return -1;
-    }
-
-    diagnostic_print(dq);
-    diagnostic_free(dq);
 
     if (main_output(output_file) == -1) {
         perror("pasm: fatal");
-        return -1;
+        return 1;
     }
 
     return 0;

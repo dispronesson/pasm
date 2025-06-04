@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include "label.h"
+#include "diagnostic.h"
+#include "func.h"
 
 #define MAX_INSTR_COUNT 32768
 #define BASE_ADDR 01000
@@ -157,6 +160,12 @@ struct instr_entry {
     struct operand op2;
 };
 
+struct realloc_table {
+    struct operand *op;
+    char label[MAX_LABEL_LENGTH + 1];
+    size_t cur_addr;
+};
+
 extern struct diagnostic_queue *dq;
 extern struct instr_entry entry[MAX_INSTR_COUNT];
 extern uint32_t instrno;
@@ -164,8 +173,12 @@ extern struct instr_info instructions[];
 extern uint32_t instructions_size;
 
 int read_file(const char *filename);
+char *read_line(FILE *file);
+void firt_pass(FILE *file);
+void second_pass(FILE *file);
 void parse_line(char *line);
-char *parse_label(char *label);
+void parse_label(char *label);
+char *skip_label(char *label);
 void parse_instr(char *instr);
 bool mnemonic_exists(struct instr_info *instruction, const char *mnemonic);
 int parse_operands(char *operands);
@@ -175,6 +188,7 @@ int parse_memory(char *mem, struct operand *out);
 int parse_register(char *reg, struct operand *out);
 int parse_indexed(char *text, struct operand *out);
 int parse_branch(char *op, struct operand *out);
+void resolve_mem_off(struct operand *op, char *name);
 bool is_immediate(char *imm);
 bool is_rn(char *reg, int offset);
 bool is_register(char *reg);

@@ -1,14 +1,14 @@
 #include "parser.h"
-#include "label.h"
-#include "diagnostic.h"
-#include "func.h"
 
 struct diagnostic_queue *dq;
 struct label_table ltab = {0};
 struct instr_entry entry[MAX_INSTR_COUNT];
+struct realloc_table rtab[MAX_INSTR_COUNT >> 2];
 uint32_t instrno;
+uint16_t rtabno;
 uint32_t lineno;
 size_t addr = BASE_ADDR;
+char buffer[MAX_BUFFER_SIZE];
 
 uint32_t instructions_size;
 struct instr_info instructions[] = {
@@ -95,42 +95,66 @@ int read_file(const char *filename) {
     if (!input) return -1;
 
     instructions_size = sizeof(instructions) / sizeof(instructions[0]);
-    char buffer[MAX_BUFFER_SIZE];
-    while (fgets(buffer, sizeof(buffer), input)) {
-        char *pos = strchr(buffer, '\n');
-        if (pos) {
-            *pos = '\0';
-        } else {
-            int c;
-            while ((c = fgetc(input)) != '\n' && c != EOF);
-        }
 
-        lineno++;
-        replace_char(buffer, '\t', ' ');
-        replace_char(buffer, ';', '\0');
-        char *line = skip_spaces(buffer);
-        if (line[0] == '\0') continue;
+    firt_pass(input);
+    
+    if (has_errors(dq)) {
+        diagnostic_print(dq);
+        diagnostic_free(dq);
+        fclose(input);
+        exit(EXIT_FAILURE);
+    }
 
-        parse_line(line);
+    lineno = 0;
+    rewind(input);
+    second_pass(input);
+
+    if (has_errors(dq)) {
+        diagnostic_print(dq);
+        diagnostic_free(dq);
+        fclose(input);
+        exit(EXIT_FAILURE);
     }
 
     fclose(input);
 
+    for (uint32_t i = 0; i < rtabno; i++) {
+        addr = rtab[i].cur_addr;
+        resolve_mem_off(rtab[i].op, rtab[i].label);
+    }
+
     return 0;
 }
 
-void parse_line(char *line) {
-    char *after_label = parse_label(line);
-    if (after_label) {
-        if (*after_label == '\0') return;
-        else line = after_label;
+char *read_line(FILE *file) {
+    if (!fgets(buffer, sizeof(buffer), file)) return NULL;
+
+    char *pos = strchr(buffer, '\n');
+    if (pos) {
+        *pos = '\0';
+    } else {
+        int c;
+        while ((c = fgetc(file)) != '\n' && c != EOF);
     }
 
-    parse_instr(line);
+    lineno++;
+    replace_char(buffer, '\t', ' ');
+    replace_char(buffer, ';', '\0');
+    char *line = skip_spaces(buffer);
+    
+    return line;
 }
 
-char *parse_label(char *label) {
-    char *after_label = NULL;
+void firt_pass(FILE *file) {
+    char *line;
+
+    while ((line = read_line(file))) {
+        if (line[0] == '\0') continue;
+        parse_label(line);
+    }
+}
+
+void parse_label(char *label) {
     char *colon = strchr(label, ':');
     if (colon) {
         if (*(colon + 1) != ' ' && *(colon + 1) != '\0') {
@@ -146,14 +170,41 @@ char *parse_label(char *label) {
                 diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid label name");
             } else if (label_exists(&ltab, label)) {
                 diagnostic_add(dq, DIAGL_ERROR, lineno, "label '%s' redefined", label);
-            } else if (label_add(&ltab, label, addr) == -1) {
+            } else if (label_add(&ltab, label) == -1) {
                 diagnostic_add(dq, DIAGL_ERROR, lineno, "max 512 label count");
             }
         }
+    }
+}
 
+void second_pass(FILE *file){
+    char *line;
+
+    while ((line = read_line(file))) {
+        if (line[0] == '\0') continue;
+        parse_line(line);
+    }
+}
+
+void parse_line(char *line) {
+    char *after_label = skip_label(line);
+    if (after_label) {
+        if (*after_label == '\0') return;
+        else line = after_label;
+    }
+
+    parse_instr(line);
+}
+
+char *skip_label(char *label) {
+    char *after_label = NULL;
+    char *colon = strchr(label, ':');
+
+    if (colon) {
+        *colon = '\0';
+        set_label_addr(&ltab, label, addr);
         after_label = skip_spaces(colon + 1);
     }
- 
 
     return after_label;
 }
@@ -184,18 +235,16 @@ void parse_instr(char *instr) {
 
 bool mnemonic_exists(struct instr_info *instruction, const char *mnemonic) {
     size_t len = strlen(mnemonic);
-    bool flag = false;
 
     for (uint32_t i = 0; i < instructions_size; i++) {
         if (len != strlen(instructions[i].mnemonic)) continue;
         if (memcmp(mnemonic, instructions[i].mnemonic, len) == 0) {
             *instruction = instructions[i];
-            flag = true;
-            break;
+            return true;
         }
     }
 
-    return flag;
+    return false;
 }
 
 int parse_operands(char *operands) {
@@ -239,30 +288,31 @@ int parse_operands(char *operands) {
         return -2;
     }
 
+    struct instr_entry *ent = &entry[instrno];
     switch (type) {
         case INSTRT_DOUBLE:
-            if (parse_operand(op1, &entry[instrno].op1) == -1) return -1;
-            if (entry[instrno].instr.instrd == INSTRD_JSR && 
-                entry[instrno].op1.type != OPT_REG && entry[instrno].op1.mode != AMOD_REG) {
+            if (parse_operand(op1, &ent->op1) == -1) return -1;
+            if (ent->instr.instrd == INSTRD_JSR && 
+                ent->op1.type != OPT_REG && ent->op1.mode != AMOD_REG) {
                 return -1;
             }
-            if (parse_operand(op2, &entry[instrno].op2) == -1) return -1;
-            if (entry[instrno].op2.type == OPT_IMM && entry[instrno].op2.mode == AMOD_INC) return -1;
+            if (parse_operand(op2, &ent->op2) == -1) return -1;
+            if ((ent->op2.type == OPT_IMM || ent->op2.type == OPT_MEM) && 
+                ent->op2.mode == AMOD_INC) return -1;
             break;
         case INSTRT_SINGLE:
-            if (parse_operand(op1, &entry[instrno].op1) == -1) return -1;
-            if (entry[instrno].instr.instrs != INSTRS_MTPS && entry[instrno].op1.type == OPT_IMM &&
-                entry[instrno].op1.mode == AMOD_INC) return -1;
-            if (entry[instrno].instr.instrs == INSTRS_RTS && 
-                entry[instrno].op1.type != OPT_REG && entry[instrno].op1.mode != AMOD_REG) {
+            if (parse_operand(op1, &ent->op1) == -1) return -1;
+            if ((ent->op1.type == OPT_IMM || ent->op1.type == OPT_MEM) &&
+                ent->op1.mode == AMOD_INC) return -1;
+            if (ent->instr.instrs == INSTRS_RTS && 
+                ent->op1.type != OPT_REG && ent->op1.mode != AMOD_REG) {
                 return -1;
             }
             break;
         case INSTRT_BRANCH:
-            if (parse_branch(op1, &entry[instrno].op1) == -1) return -1;
+            if (parse_branch(op1, &ent->op1) == -1) return -1;
             break;
-        case INSTRT_WITHOUT: break;
-        case INSTRT_DIRECTIVE: break;
+        default: break;
     }
 
     instrno++;
@@ -373,6 +423,13 @@ int parse_memory(char *mem, struct operand *out) {
 
     if (label_exists(&ltab, mem)) {
         size_t label_addr = get_label_addr(&ltab, mem);
+        if (label_addr == 0) {
+            rtab[rtabno].op = out;
+            rtab[rtabno].cur_addr = addr;
+            snprintf(rtab[rtabno].label, MAX_LABEL_LENGTH + 1, "%s", mem);
+            rtabno++;
+        }
+
         out->mem_off = (uint16_t)label_addr;
         out->type = OPT_MEM;
         return 0;
@@ -389,18 +446,18 @@ int parse_register(char *reg, struct operand *out) {
     return 0;
 }
 
-int parse_indexed(char *number, struct operand *out) {
+int parse_indexed(char *text, struct operand *out) {
     int res = 0;
 
-    if (is_immediate(number)) {
+    if (is_immediate(text)) {
         char *end;
-        int64_t value = strtoll(number, &end, 8);
+        int64_t value = strtoll(text, &end, 8);
         if (*end == '\0' || !is_register_def(end)) return -1;
         out->mem_off = (uint16_t)value;
         parse_register(end + 1, out);
     } else {
         out->regno = 7;
-        res = parse_memory(number, out);
+        res = parse_memory(text, out);
         if (res == 0) out->mem_off -= addr;
     }
 
@@ -420,7 +477,7 @@ int parse_branch(char *op, struct operand *out) {
         return 0;
     } else {
         int res = parse_memory(op, out);
-        if (res == 0) {
+        if (res == 0 && out->mem_off) {
             int16_t offset = (int16_t)out->mem_off;
             offset -= addr;
             offset /= 2;
@@ -429,8 +486,25 @@ int parse_branch(char *op, struct operand *out) {
                 return -2;
             }
             out->mem_off = (uint16_t)offset;
+            out->mode = AMOD_REG;
         }
         return res;
+    }
+}
+
+void resolve_mem_off(struct operand *op, char *name) {
+    switch (op->mode) {
+        case AMOD_INC:
+        case AMOD_INC_DEF:
+            parse_memory(name, op);
+            break;
+        case AMOD_IND:
+        case AMOD_IND_DEF:
+            parse_indexed(name, op);
+            break;
+        default: 
+            parse_branch(name, op);
+            break;
     }
 }
 
