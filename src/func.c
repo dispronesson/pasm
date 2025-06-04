@@ -60,10 +60,10 @@ void valid_args(int argc, char **argv) {
                 if (optopt == 'i') {
                     fprintf(stderr, "pasm: fatal: no input file specified\n");
                     fprintf(stderr, "type pasm -h for help\n");
-                    exit(EXIT_FAILURE);
                 } else if (optopt == 'o') {
                     fprintf(stderr, "pasm: error: option '-o' requires an argument\n");
                 }
+                exit(EXIT_FAILURE);
                 break;
             case '?':
                 if (strncmp(argv[optind - 1], "--", 2) == 0) {
