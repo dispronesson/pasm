@@ -106,7 +106,7 @@ enum instr_branch {
     INSTRB_BCS
 };
 
-enum directive {
+enum directive_type {
     DIR_BYTE,
     DIR_WORD,
     DIR_BLKB,
@@ -137,10 +137,14 @@ struct instr_info {
         enum instr_single instrs;
         enum instr_without instrw;
         enum instr_branch instrb;
-        enum directive dir;
+        enum directive_type dir;
     };
+    union {
+        uint16_t opcode;
+        char *ptr;
+    };
+    uint16_t value;
     char mnemonic[8];
-    uint16_t opcode;
     bool is_byte;
 };
 
@@ -169,8 +173,6 @@ struct realloc_table {
 extern struct diagnostic_queue *dq;
 extern struct instr_entry entry[MAX_INSTR_COUNT];
 extern uint32_t instrno;
-extern struct instr_info instructions[];
-extern uint32_t instructions_size;
 
 int read_file(const char *filename);
 char *read_line(FILE *file);
@@ -195,5 +197,12 @@ bool is_register(char *reg);
 bool is_register_def(char *reg);
 bool is_autoinc(char *reg);
 bool is_autodec(char *reg);
+void parse_derective(char *dir);
+int parse_dirops(char *operands);
+int parse_string(char *string, uint16_t *op_count, char **ptr);
+int parse_value(char *imm, int64_t *value);
+int parse_byte_and_word(char *str, uint16_t *op_count, char **ptr);
+int parse_block(char *str, int64_t *value);
+char *find_comma_outside(char *str);
 
 #endif //PARSER_H

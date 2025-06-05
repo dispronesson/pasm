@@ -1,5 +1,7 @@
 #include "parser.h"
 
+#define INSTRUCTIONS_SIZE (sizeof(instructions) / sizeof(instructions[0]))
+
 struct diagnostic_queue *dq;
 struct label_table ltab = {0};
 struct instr_entry entry[MAX_INSTR_COUNT];
@@ -9,8 +11,8 @@ uint16_t rtabno;
 uint32_t lineno;
 size_t addr = BASE_ADDR;
 char buffer[MAX_BUFFER_SIZE];
+bool is_inc_mode = false;
 
-uint32_t instructions_size;
 struct instr_info instructions[] = {
     { .type = INSTRT_DOUBLE, .instrd = INSTRD_MOV, .mnemonic = "mov", .opcode = 001, .is_byte = false },
     { .type = INSTRT_DOUBLE, .instrd = INSTRD_MOVB, .mnemonic = "movb", .opcode = 011, .is_byte = true },
@@ -28,29 +30,29 @@ struct instr_info instructions[] = {
     { .type = INSTRT_SINGLE, .instrs = INSTRS_JMP, .mnemonic = "jmp", .opcode = 00001, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_SWAB, .mnemonic = "swab", .opcode = 00003, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_CLR, .mnemonic = "clr", .opcode = 00050, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_CLRB, .mnemonic = "clrb", .opcode = 01050, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_CLRB, .mnemonic = "clrb", .opcode = 01050, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_COM, .mnemonic = "com", .opcode = 00051, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_COMB, .mnemonic = "comb", .opcode = 01051, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_COMB, .mnemonic = "comb", .opcode = 01051, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_INC, .mnemonic = "inc", .opcode = 00052, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_INCB, .mnemonic = "incb", .opcode = 01052, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_INCB, .mnemonic = "incb", .opcode = 01052, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_DEC, .mnemonic = "dec", .opcode = 00053, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_DECB, .mnemonic = "decb", .opcode = 01053, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_DECB, .mnemonic = "decb", .opcode = 01053, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_NEG, .mnemonic = "neg", .opcode = 00054, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_NEGB, .mnemonic = "negb", .opcode = 01054, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_NEGB, .mnemonic = "negb", .opcode = 01054, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ADC, .mnemonic = "adc", .opcode = 00055, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ADCB, .mnemonic = "adcb", .opcode = 01055, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_ADCB, .mnemonic = "adcb", .opcode = 01055, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_SBC, .mnemonic = "sbc", .opcode = 00056, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_SBCB, .mnemonic = "sbcb", .opcode = 01056, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_SBCB, .mnemonic = "sbcb", .opcode = 01056, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_TST, .mnemonic = "tst", .opcode = 00057, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_TSTB, .mnemonic = "tstb", .opcode = 01057, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_TSTB, .mnemonic = "tstb", .opcode = 01057, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ROR, .mnemonic = "ror", .opcode = 00060, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_RORB, .mnemonic = "rorb", .opcode = 01060, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_RORB, .mnemonic = "rorb", .opcode = 01060, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ROL, .mnemonic = "rol", .opcode = 00061, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ROLB, .mnemonic = "rolb", .opcode = 01061, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_ROLB, .mnemonic = "rolb", .opcode = 01061, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ASR, .mnemonic = "asr", .opcode = 00062, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASRB, .mnemonic = "asrb", .opcode = 01062, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASRB, .mnemonic = "asrb", .opcode = 01062, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_ASL, .mnemonic = "asl", .opcode = 00063, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASLB, .mnemonic = "aslb", .opcode = 01063, .is_byte = true },
+    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASLB, .mnemonic = "aslb", .opcode = 01063, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_MTPS, .mnemonic = "mtps", .opcode = 01064, .is_byte = false},
     { .type = INSTRT_SINGLE, .instrs = INSTRS_MFPS, .mnemonic = "mfps", .opcode = 01067, .is_byte = false },
     { .type = INSTRT_SINGLE, .instrs = INSTRS_RTS, .mnemonic = "rts", .opcode = 000020, .is_byte = false },
@@ -84,17 +86,15 @@ struct instr_info instructions[] = {
     { .type = INSTRT_BRANCH, .instrb = INSTRB_BVS, .mnemonic = "bvs", .opcode = 0205, .is_byte = false },
     { .type = INSTRT_BRANCH, .instrb = INSTRB_BCC, .mnemonic = "bcc", .opcode = 0206, .is_byte = false },
     { .type = INSTRT_BRANCH, .instrb = INSTRB_BCS, .mnemonic = "bcs", .opcode = 0207, .is_byte = false },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_BYTE, .mnemonic = "byte", .opcode = 0, .is_byte = true },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_WORD, .mnemonic = "word", .opcode = 0, .is_byte = false },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKB, .mnemonic = "blkb", .opcode = 0, .is_byte = true },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKW, .mnemonic = "blkw", .opcode = 0, .is_byte = false }
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_BYTE, .mnemonic = ".byte", .ptr = NULL, .value = 0, .is_byte = true },
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_WORD, .mnemonic = ".word", .ptr = NULL, .value = 0, .is_byte = false },
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKB, .mnemonic = ".blkb", .ptr = NULL, .value = 0, .is_byte = true },
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKW, .mnemonic = ".blkw", .ptr = NULL, .value = 0, .is_byte = false }
 };
 
 int read_file(const char *filename) {
     FILE *input = fopen(filename, "r");
     if (!input) return -1;
-
-    instructions_size = sizeof(instructions) / sizeof(instructions[0]);
 
     firt_pass(input);
     
@@ -115,6 +115,9 @@ int read_file(const char *filename) {
         fclose(input);
         exit(EXIT_FAILURE);
     }
+
+    diagnostic_print(dq);
+    diagnostic_free(dq);
 
     fclose(input);
 
@@ -193,7 +196,8 @@ void parse_line(char *line) {
         else line = after_label;
     }
 
-    parse_instr(line);
+    if (line[0] == '.') parse_derective(line);
+    else parse_instr(line);
 }
 
 char *skip_label(char *label) {
@@ -236,7 +240,7 @@ void parse_instr(char *instr) {
 bool mnemonic_exists(struct instr_info *instruction, const char *mnemonic) {
     size_t len = strlen(mnemonic);
 
-    for (uint32_t i = 0; i < instructions_size; i++) {
+    for (uint64_t i = 0; i < INSTRUCTIONS_SIZE; i++) {
         if (len != strlen(instructions[i].mnemonic)) continue;
         if (memcmp(mnemonic, instructions[i].mnemonic, len) == 0) {
             *instruction = instructions[i];
@@ -250,7 +254,7 @@ bool mnemonic_exists(struct instr_info *instruction, const char *mnemonic) {
 int parse_operands(char *operands) {
     uint8_t op_count;
     char *op1, *op2;
-    char *comma = strchr(operands, ',');
+    char *comma = find_comma_outside(operands);
     if (comma) {
         *comma = '\0';
         op1 = operands;
@@ -328,6 +332,7 @@ int parse_operand(char *op, struct operand *out) {
         out->mode = AMOD_INC_DEF;
         out->regno = 7;
         addr += 2;
+        is_inc_mode = false;
         if (is_immediate(op_dup + 2)) return parse_immediate(op_dup + 2, out);
         return parse_memory(op + 2, out);
     } 
@@ -335,6 +340,7 @@ int parse_operand(char *op, struct operand *out) {
         out->mode = AMOD_INC;
         out->regno = 7;
         addr += 2;
+        is_inc_mode = true;
         if (is_immediate(op_dup + 1)) return parse_immediate(op_dup + 1, out);
         return parse_memory(op + 1, out);
     }
@@ -384,33 +390,9 @@ int parse_immediate(char *imm, struct operand *out) {
         if (strlen(imm) != 1) return -1;
 
         out->imm = (uint16_t)(unsigned char)*imm;
-    } else if (*imm == '-' || isdigit((unsigned char)*imm)) {
-        str_to_lower(imm);
-        int base = 8;
-        size_t len = strlen(imm);
-
-        switch (imm[len - 1]) {
-            case 'd': base = 10; imm[len - 1] = '\0'; break;
-            case 'h': base = 16; imm[len - 1] = '\0'; break;
-            case 'b': base = 2; imm[len - 1] = '\0'; break;
-        }
-
-        char *end;
-        int64_t value = strtoll(imm, &end, base);
-        if (*end != '\0') return -1;
-            
-        if (entry[instrno].instr.is_byte) {
-            if (value < -128 || value > 255) {
-                diagnostic_add(dq, DIAGL_WARNING, lineno, "overflow in 8-bit immediate value");
-            }
-            value &= 0xFF;
-        } else {
-            if (value < -32768 || value > 65535) {
-                diagnostic_add(dq, DIAGL_WARNING, lineno, "overflow in 16-bit immediate value");
-            }
-            value &= 0xFFFF;
-        }
-
+    } else if (is_immediate(imm)) {
+        int64_t value;
+        if (parse_value(imm, &value) == -1) return -1;
         out->imm = (uint16_t)value;
     }
 
@@ -534,4 +516,209 @@ bool is_autoinc(char *reg) {
 bool is_autodec(char *reg) {
     return (reg[0] == '-' && reg[1] == '(' && is_rn(reg, 2) && reg[4] == ')' && reg[5] == '\0') || 
            (strcmp(reg, "-(sp)") == 0) || (strcmp(reg, "-(pc)") == 0);
+}
+
+void parse_derective(char *dir) {
+    char name[8];
+    sscanf(dir, "%7s", name);
+
+    size_t len = strlen(name);
+    if (dir[len] != ' ' && dir[len] != '\0') {
+        diagnostic_add(dq, DIAGL_ERROR, lineno, "directive expected");
+        return;
+    }
+
+    str_to_lower(name);
+    if (!mnemonic_exists(&entry[instrno].instr, name)) {
+        diagnostic_add(dq, DIAGL_ERROR, lineno, "directive expected");
+        return;
+    }
+
+    dir += len;
+    char *after_dir = skip_spaces(dir);
+    int res = parse_dirops(after_dir);
+    if (res == -1) {
+        diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid operand");
+        return;
+    } else if (res == -2) {
+        diagnostic_free(dq);
+        exit(EXIT_FAILURE);
+    }
+}
+
+int parse_dirops(char *operands) {
+    int res;
+    uint16_t op_count = 0;
+    int64_t value = 0;
+    char *comma, *cur_op, *ptr = NULL;
+    bool is_block = entry[instrno].instr.dir == DIR_BLKB || entry[instrno].instr.dir == DIR_BLKW;
+
+    while (1) {
+        cur_op = operands;
+        comma = find_comma_outside(operands);
+        if (comma) {
+            if (is_block) return -1;
+            *comma = '\0';
+        }
+
+        if (*cur_op == '"') {
+            res = parse_string(cur_op + 1, &op_count, &ptr);
+        } else if (is_immediate(cur_op)) {
+            is_inc_mode = true;
+            if (!is_block) {
+                res = parse_byte_and_word(cur_op, &op_count, &ptr);
+            } else if (*cur_op == '-') {
+                res = -1;
+            } else {
+                res = parse_block(cur_op, &value);
+            }
+        } else res = -1;
+
+        if (res != 0) {
+            free(ptr);
+            return res;
+        }
+
+        if (!comma) break;
+        operands = skip_spaces(comma + 1);
+    }
+
+    if (is_block) {
+        entry[instrno].instr.value = (uint16_t)value;
+    } else {
+        if (entry[instrno].instr.dir == DIR_BYTE && op_count % 2 != 0) {
+            size_t tmp_s = op_count;
+            op_count++;
+            char *tmp = realloc(ptr, op_count);
+            if (!tmp) {
+                free(ptr);
+                return -2;
+            }
+            addr++;
+            ptr = tmp;
+            ptr[tmp_s] = 0;
+        }
+        entry[instrno].instr.ptr = ptr;
+        entry[instrno].instr.value = op_count;
+    }
+
+    instrno++;
+    return 0;
+}
+
+int parse_string(char *string, uint16_t *op_count, char **ptr) {
+    if (entry[instrno].instr.dir != DIR_BYTE) return -1;
+
+    char *quot_mark = strchr(string, '"');
+    if (!quot_mark) return -1;
+
+    *quot_mark = '\0';
+    quot_mark = skip_spaces(quot_mark + 1);
+    if (*quot_mark != '\0') return -1;
+
+    size_t len = strlen(string);
+    if (len == 0) return -1;
+
+    size_t tmp_s = *op_count;
+    *op_count += len;
+    char *tmp = realloc(*ptr, *op_count);
+    if (!tmp) return -2;
+
+    addr += len;
+    *ptr = tmp;
+    memcpy(*ptr + tmp_s, string, len);
+
+    return 0;
+}
+
+int parse_value(char *imm, int64_t *value) {
+    str_to_lower(imm);
+    int base = 8;
+    size_t len = strlen(imm);
+
+    switch (imm[len - 1]) {
+        case 'd': base = 10; imm[len - 1] = '\0'; break;
+        case 'h': base = 16; imm[len - 1] = '\0'; break;
+        case 'b': base = 2; imm[len - 1] = '\0'; break;
+    }
+
+    char *end;
+    *value = strtoll(imm, &end, base);
+    if (*end != '\0') return -1;
+
+    if (entry[instrno].instr.is_byte && is_inc_mode) {
+        if (*value < -128 || *value > 255) {
+            diagnostic_add(dq, DIAGL_WARNING, lineno, "overflow in 8-bit immediate value");
+        }
+        is_inc_mode = false;
+        *value &= 0xFF;
+    } else {
+        if (*value < -32768 || *value > 65535) {
+            diagnostic_add(dq, DIAGL_WARNING, lineno, "overflow in 16-bit immediate value");
+        }
+        *value &= 0xFFFF;
+    }
+
+    return 0;
+}
+
+int parse_byte_and_word(char *str, uint16_t *op_count, char **ptr) {
+    char *space = strchr(str, ' ');
+    if (space) {
+        *space = '\0';
+        char *after_space = skip_spaces(space + 1);
+        if (*after_space != '\0') return -1;
+    }
+
+    int64_t value;
+    if (parse_value(str, &value) == -1) return -1;
+
+    size_t tmp_s = *op_count;
+    *op_count += entry[instrno].instr.is_byte ? 1 : 2;
+    char *tmp = realloc(*ptr, *op_count);
+    if (!tmp) return -2;
+
+    *ptr = tmp;
+
+    if (entry[instrno].instr.is_byte) {
+        addr++;
+        uint8_t byte = (uint8_t)value;
+        memcpy(*ptr + tmp_s, &byte, 1);
+    } else {
+        addr += 2;
+        uint16_t word = (uint16_t)value;
+        memcpy(*ptr + tmp_s, &word, 2);
+    }
+
+    return 0;
+}
+
+int parse_block(char *str, int64_t *value) {
+    char *space = strchr(str, ' ');
+    if (space) {
+        *space = '\0';
+        char *after_space = skip_spaces(space + 1);
+        if (*after_space != '\0') return -1;
+    }
+
+    if (parse_value(str, value) == -1 || *value == 0) return -1;
+    
+    if (entry[instrno].instr.dir == DIR_BLKB && *value % 2 != 0) (*value)++;
+
+    addr += entry[instrno].instr.dir == DIR_BLKB ? *value : (*value << 1);
+
+    return 0;
+}
+
+char *find_comma_outside(char *str) {
+    bool in_quotes = false;
+    while (*str) {
+        if (*str == '"') {
+            in_quotes = !in_quotes;
+        } else if (*str == ',' && !in_quotes) {
+            return str;
+        }
+        str++;
+    }
+    return NULL;
 }
