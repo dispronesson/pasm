@@ -9,6 +9,7 @@
 #include "label.h"
 #include "diagnostic.h"
 #include "func.h"
+#include <unistd.h>
 
 #define MAX_INSTR_COUNT 32768
 #define BASE_ADDR 01000

@@ -88,7 +88,7 @@ struct instr_info instructions[] = {
     { .type = INSTRT_BRANCH, .instrb = INSTRB_BCS, .mnemonic = "bcs", .opcode = 0207, .is_byte = false },
     { .type = INSTRT_DIRECTIVE, .dir = DIR_BYTE, .mnemonic = ".byte", .ptr = NULL, .value = 0, .is_byte = true },
     { .type = INSTRT_DIRECTIVE, .dir = DIR_WORD, .mnemonic = ".word", .ptr = NULL, .value = 0, .is_byte = false },
-    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKB, .mnemonic = ".blkb", .ptr = NULL, .value = 0, .is_byte = true },
+    { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKB, .mnemonic = ".blkb", .ptr = NULL, .value = 0, .is_byte = false },
     { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKW, .mnemonic = ".blkw", .ptr = NULL, .value = 0, .is_byte = false }
 };
 
@@ -125,6 +125,7 @@ int read_file(const char *filename) {
         addr = rtab[i].cur_addr;
         resolve_mem_off(rtab[i].op, rtab[i].label);
     }
+
 
     return 0;
 }
@@ -206,6 +207,7 @@ char *skip_label(char *label) {
 
     if (colon) {
         *colon = '\0';
+        str_to_lower(label);
         set_label_addr(&ltab, label, addr);
         after_label = skip_spaces(colon + 1);
     }
@@ -491,7 +493,7 @@ void resolve_mem_off(struct operand *op, char *name) {
 }
 
 bool is_immediate(char *imm) {
-    return imm[0] == '"' || imm[0] == '-' || isdigit((unsigned char)imm[0]);
+    return imm[0] == '"' || imm[0] == '-' || isxdigit((unsigned char)imm[0]);
 }
 
 bool is_rn(char *reg, int offset) {
@@ -552,6 +554,7 @@ int parse_dirops(char *operands) {
     int64_t value = 0;
     char *comma, *cur_op, *ptr = NULL;
     bool is_block = entry[instrno].instr.dir == DIR_BLKB || entry[instrno].instr.dir == DIR_BLKW;
+    is_inc_mode = true;
 
     while (1) {
         cur_op = operands;
@@ -564,7 +567,6 @@ int parse_dirops(char *operands) {
         if (*cur_op == '"') {
             res = parse_string(cur_op + 1, &op_count, &ptr);
         } else if (is_immediate(cur_op)) {
-            is_inc_mode = true;
             if (!is_block) {
                 res = parse_byte_and_word(cur_op, &op_count, &ptr);
             } else if (*cur_op == '-') {
@@ -650,7 +652,6 @@ int parse_value(char *imm, int64_t *value) {
         if (*value < -128 || *value > 255) {
             diagnostic_add(dq, DIAGL_WARNING, lineno, "overflow in 8-bit immediate value");
         }
-        is_inc_mode = false;
         *value &= 0xFF;
     } else {
         if (*value < -32768 || *value > 65535) {

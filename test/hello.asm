@@ -6,17 +6,19 @@ start:
     jsr pc, print
     add #2, sp
 
+exit:
     halt
 
 
 print:
-    tstb @#177564
+    tstb @RXS
     beq print
-    movb (r0)+, @#177566
+    movb (r0)+, @RXD
     bne print
-
     rts pc
 
 string: .byte "Hello, World!", 13d, 10d, 0
+RXS: .word 177564
+RXD: .word 177566
 
 stack: .blkb 32d
