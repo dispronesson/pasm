@@ -165,7 +165,7 @@ void parse_label(char *label) {
             diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid label definition");
         } else {
             *colon = '\0';
-            str_to_lower(label);
+            str_to_lower(label);;
             if (label[0] == '\0') {
                 diagnostic_add(dq, DIAGL_ERROR, lineno, "label name expected");
             } else if (strlen(label) > MAX_LABEL_LENGTH) {
@@ -260,7 +260,13 @@ int parse_operands(char *operands) {
     if (comma) {
         *comma = '\0';
         op1 = operands;
-        replace_char(op1, ' ', '\0');
+        char *after_op1 = find_space_outside(op1);
+        if (after_op1) {
+            *after_op1 = '\0';
+            after_op1 = skip_spaces(after_op1 + 1);
+            if (*after_op1 != '\0') return -1;
+        }
+
         char *after_comma = skip_spaces(comma + 1);
         op2 = after_comma;
         while (*after_comma != ' ' && *after_comma != '\0') after_comma++;
@@ -298,20 +304,20 @@ int parse_operands(char *operands) {
     switch (type) {
         case INSTRT_DOUBLE:
             if (parse_operand(op1, &ent->op1) == -1) return -1;
-            if (ent->instr.instrd == INSTRD_JSR && 
-                ent->op1.type != OPT_REG && ent->op1.mode != AMOD_REG) {
+            if (ent->instr.instrd == INSTRD_JSR && ent->op1.mode != AMOD_REG) {
                 return -1;
             }
             if (parse_operand(op2, &ent->op2) == -1) return -1;
-            if ((ent->op2.type == OPT_IMM || ent->op2.type == OPT_MEM) && 
+            if (ent->instr.instrd != INSTRD_CMP && ent->instr.instrd != INSTRD_CMPB &&
+                ent->instr.instrd != INSTRD_BIT && ent->instr.instrd != INSTRD_BITB &&
+                (ent->op2.type == OPT_IMM || ent->op2.type == OPT_MEM) && 
                 ent->op2.mode == AMOD_INC) return -1;
             break;
         case INSTRT_SINGLE:
             if (parse_operand(op1, &ent->op1) == -1) return -1;
             if ((ent->op1.type == OPT_IMM || ent->op1.type == OPT_MEM) &&
                 ent->op1.mode == AMOD_INC) return -1;
-            if (ent->instr.instrs == INSTRS_RTS && 
-                ent->op1.type != OPT_REG && ent->op1.mode != AMOD_REG) {
+            if (ent->instr.instrs == INSTRS_RTS && ent->op1.mode != AMOD_REG) {
                 return -1;
             }
             break;
@@ -382,9 +388,9 @@ int parse_operand(char *op, struct operand *out) {
 }
 
 int parse_immediate(char *imm, struct operand *out) {
-    if (*imm == '"') {
+    if (*imm == '\'') {
         imm++;
-        char *quot_mark = strchr(imm, '"');
+        char *quot_mark = strchr(imm, '\'');
         if (!quot_mark) return -1;
 
         *quot_mark = '\0';
@@ -392,7 +398,7 @@ int parse_immediate(char *imm, struct operand *out) {
         if (strlen(imm) != 1) return -1;
 
         out->imm = (uint16_t)(unsigned char)*imm;
-    } else if (is_immediate(imm)) {
+    } else {
         int64_t value;
         if (parse_value(imm, &value) == -1) return -1;
         out->imm = (uint16_t)value;
@@ -493,7 +499,8 @@ void resolve_mem_off(struct operand *op, char *name) {
 }
 
 bool is_immediate(char *imm) {
-    return imm[0] == '"' || imm[0] == '-' || isxdigit((unsigned char)imm[0]);
+    return imm[0] == '\'' || imm[0] == '-' || 
+    (imm[0] == '0' && isxdigit((unsigned char)imm[1])) || isdigit((unsigned char)imm[0]);
 }
 
 bool is_rn(char *reg, int offset) {
@@ -714,9 +721,22 @@ int parse_block(char *str, int64_t *value) {
 char *find_comma_outside(char *str) {
     bool in_quotes = false;
     while (*str) {
-        if (*str == '"') {
+        if (*str == '"' || *str == '\'') {
             in_quotes = !in_quotes;
         } else if (*str == ',' && !in_quotes) {
+            return str;
+        }
+        str++;
+    }
+    return NULL;
+}
+
+char *find_space_outside(char *str) {
+    bool in_quotes = false;
+    while (*str) {
+        if (*str == '"' || *str == '\'') {
+            in_quotes = !in_quotes;
+        } else if (*str == ' ' && !in_quotes) {
             return str;
         }
         str++;

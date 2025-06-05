@@ -11,14 +11,14 @@ exit:
 
 
 print:
-    tstb @RXS
+    tstb @TCSR
     beq print
-    movb (r0)+, @RXD
+    movb (r0)+, @TBUF
     bne print
     rts pc
 
 string: .byte "Hello, World!", 13d, 10d, 0
-RXS: .word 177564
-RXD: .word 177566
+TCSR: .word 177564
+TBUF: .word 177566
 
 stack: .blkb 32d

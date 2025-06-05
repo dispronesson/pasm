@@ -205,5 +205,6 @@ int parse_value(char *imm, int64_t *value);
 int parse_byte_and_word(char *str, uint16_t *op_count, char **ptr);
 int parse_block(char *str, int64_t *value);
 char *find_comma_outside(char *str);
+char *find_space_outside(char *str);
 
 #endif //PARSER_H
