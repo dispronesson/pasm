@@ -165,7 +165,7 @@ void parse_label(char *label) {
             diagnostic_add(dq, DIAGL_ERROR, lineno, "invalid label definition");
         } else {
             *colon = '\0';
-            str_to_lower(label);;
+            str_to_lower(label);
             if (label[0] == '\0') {
                 diagnostic_add(dq, DIAGL_ERROR, lineno, "label name expected");
             } else if (strlen(label) > MAX_LABEL_LENGTH) {
