@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS_DEBUG = -g -ggdb -std=c17 -pedantic -W -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable
-CFLAGS_RELEASE = -std=c17 -pedantic -W -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-variable
+CFLAGS_DEBUG = -g -ggdb -std=c17 -pedantic -W -Wall -Wextra
+CFLAGS_RELEASE = -std=c17 -pedantic -W -Wall -Wextra -Werror
 
 SRC_DIR = src
 BUILD_DIR = build

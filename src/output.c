@@ -12,16 +12,16 @@ int main_output(char *filename) {
 
         switch (instruction->type) {
             case INSTRT_DOUBLE:
-                output[cur_instr++] = output_instrd(instruction->instrd, &entry[i].op1, &entry[i].op2, instruction->opcode);
+                output[cur_instr++] = output_instrd(instruction->info, &entry[i].op1, &entry[i].op2, instruction->opcode);
                 extra_instr(&entry[i].op1);
                 extra_instr(&entry[i].op2);
                 break;
             case INSTRT_SINGLE:
-                output[cur_instr++] = output_instrs(instruction->instrs, &entry[i].op1, instruction->opcode);
+                output[cur_instr++] = output_instrs(instruction->info, &entry[i].op1, instruction->opcode);
                 extra_instr(&entry[i].op1);
                 break;
             case INSTRT_BRANCH:
-                output[cur_instr++] = output_instrb(instruction->instrb, &entry[i].op1, instruction->opcode);
+                output[cur_instr++] = output_instrb(&entry[i].op1, instruction->opcode);
                 break;
             case INSTRT_WITHOUT:
                 output[cur_instr++] = instruction->opcode;
@@ -49,10 +49,10 @@ int main_output(char *filename) {
     return 0;
 }
 
-uint16_t output_instrd(enum instr_double type, struct operand *op1, struct operand *op2, uint16_t opcode) {
+uint16_t output_instrd(enum instr_extra type, struct operand *op1, struct operand *op2, uint16_t opcode) {
     uint16_t bin_code = (uint16_t)((addr_mode(op1) << 6) | addr_mode(op2));
 
-    if (type == INSTRD_JSR) {
+    if (type == INSTR_JSR) {
         bin_code = (opcode << 9) | bin_code;
     } else {
         bin_code = (opcode << 12) | bin_code;
@@ -61,10 +61,10 @@ uint16_t output_instrd(enum instr_double type, struct operand *op1, struct opera
     return bin_code;
 }
 
-uint16_t output_instrs(enum instr_single type, struct operand *op, uint16_t opcode) {
+uint16_t output_instrs(enum instr_extra type, struct operand *op, uint16_t opcode) {
     uint16_t bin_code = addr_mode(op);
 
-    if (type == INSTRS_RTS) {
+    if (type == INSTR_RTS) {
         bin_code = (opcode << 3) | bin_code;
     } else {
         bin_code = (opcode << 6) | bin_code;
@@ -73,7 +73,7 @@ uint16_t output_instrs(enum instr_single type, struct operand *op, uint16_t opco
     return bin_code;
 }
 
-uint16_t output_instrb(enum instr_branch type, struct operand *op, uint16_t opcode) {
+uint16_t output_instrb(struct operand *op, uint16_t opcode) {
     uint16_t bin_code = (op->mem_off & 0xFF);
     bin_code = (opcode << 8) | bin_code;
     return bin_code;

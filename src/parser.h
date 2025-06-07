@@ -23,88 +23,14 @@ enum instr_type {
     INSTRT_DIRECTIVE
 };
 
-enum instr_double {
-    INSTRD_MOV,
-    INSTRD_MOVB,
-    INSTRD_CMP,
-    INSTRD_CMPB,
-    INSTRD_BIT,
-    INSTRD_BITB,
-    INSTRD_BIC,
-    INSTRD_BICB,
-    INSTRD_BIS,
-    INSTRD_BISB,
-    INSTRD_ADD,
-    INSTRD_SUB,
-    INSTRD_JSR
-};
-
-enum instr_single {
-    INSTRS_JMP,
-    INSTRS_SWAB,
-    INSTRS_CLR,
-    INSTRS_CLRB,
-    INSTRS_COM,
-    INSTRS_COMB,
-    INSTRS_INC,
-    INSTRS_INCB,
-    INSTRS_DEC,
-    INSTRS_DECB,
-    INSTRS_NEG,
-    INSTRS_NEGB,
-    INSTRS_ADC,
-    INSTRS_ADCB,
-    INSTRS_SBC,
-    INSTRS_SBCB,
-    INSTRS_TST,
-    INSTRS_TSTB,
-    INSTRS_ROR,
-    INSTRS_RORB,
-    INSTRS_ROL,
-    INSTRS_ROLB,
-    INSTRS_ASR,
-    INSTRS_ASRB,
-    INSTRS_ASL,
-    INSTRS_ASLB,
-    INSTRS_MTPS,
-    INSTRS_MFPS,
-    INSTRS_RTS
-};
-
-enum instr_without {
-    INSTRW_CLC,
-    INSTRW_CLV,
-    INSTRW_CLZ,
-    INSTRW_CLN,
-    INSTRW_CCC,
-    INSTRW_SEC,
-    INSTRW_SEV,
-    INSTRW_SEZ,
-    INSTRW_SEN,
-    INSTRW_SCC,
-    INSTRW_HALT,
-    INSTRW_WAIT,
-    INSTRW_NOP
-};
-
-enum instr_branch {
-    INSTRB_BR,
-    INSTRB_BNE,
-    INSTRB_BEQ,
-    INSTRB_BGE,
-    INSTRB_BLT,
-    INSTRB_BGT,
-    INSTRB_BLE,
-    INSTRB_BPL,
-    INSTRB_BMI,
-    INSTRB_BHI,
-    INSTRB_BLOS,
-    INSTRB_BHIS,
-    INSTRB_BLO,
-    INSTRB_BVC,
-    INSTRB_BVS,
-    INSTRB_BCC,
-    INSTRB_BCS
+enum instr_extra {
+    INSTR_JSR,
+    INSTR_CMP,
+    INSTR_CMPB,
+    INSTR_BIT,
+    INSTR_BITB,
+    INSTR_RTS,
+    INSTR_NONE
 };
 
 enum directive_type {
@@ -134,10 +60,7 @@ enum operand_type {
 struct instr_info {
     enum instr_type type;
     union {
-        enum instr_double instrd;
-        enum instr_single instrs;
-        enum instr_without instrw;
-        enum instr_branch instrb;
+        enum instr_extra info;
         enum directive_type dir;
     };
     union {

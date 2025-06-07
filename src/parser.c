@@ -14,78 +14,78 @@ char buffer[MAX_BUFFER_SIZE];
 bool is_inc_mode = false;
 
 struct instr_info instructions[] = {
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_MOV, .mnemonic = "mov", .opcode = 001, .is_byte = false },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_MOVB, .mnemonic = "movb", .opcode = 011, .is_byte = true },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_CMP, .mnemonic = "cmp", .opcode = 002, .is_byte = false },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_CMPB, .mnemonic = "cmpb", .opcode = 012, .is_byte = true },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_BIT, .mnemonic = "bit", .opcode = 003, .is_byte = false },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_BITB, .mnemonic = "bitb", .opcode = 013, .is_byte = true },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_BIC, .mnemonic = "bic", .opcode = 004, .is_byte = false },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_BICB, .mnemonic = "bicb", .opcode = 014, .is_byte = true },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_BIS, .mnemonic = "bis", .opcode = 005, .is_byte = false },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_BISB, .mnemonic = "bisb", .opcode = 015, .is_byte = true },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_ADD, .mnemonic = "add", .opcode = 006, .is_byte = false },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_SUB, .mnemonic = "sub", .opcode = 016, .is_byte = false },
-    { .type = INSTRT_DOUBLE, .instrd = INSTRD_JSR, .mnemonic = "jsr", .opcode = 0004, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_JMP, .mnemonic = "jmp", .opcode = 00001, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_SWAB, .mnemonic = "swab", .opcode = 00003, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_CLR, .mnemonic = "clr", .opcode = 00050, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_CLRB, .mnemonic = "clrb", .opcode = 01050, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_COM, .mnemonic = "com", .opcode = 00051, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_COMB, .mnemonic = "comb", .opcode = 01051, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_INC, .mnemonic = "inc", .opcode = 00052, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_INCB, .mnemonic = "incb", .opcode = 01052, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_DEC, .mnemonic = "dec", .opcode = 00053, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_DECB, .mnemonic = "decb", .opcode = 01053, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_NEG, .mnemonic = "neg", .opcode = 00054, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_NEGB, .mnemonic = "negb", .opcode = 01054, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ADC, .mnemonic = "adc", .opcode = 00055, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ADCB, .mnemonic = "adcb", .opcode = 01055, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_SBC, .mnemonic = "sbc", .opcode = 00056, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_SBCB, .mnemonic = "sbcb", .opcode = 01056, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_TST, .mnemonic = "tst", .opcode = 00057, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_TSTB, .mnemonic = "tstb", .opcode = 01057, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ROR, .mnemonic = "ror", .opcode = 00060, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_RORB, .mnemonic = "rorb", .opcode = 01060, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ROL, .mnemonic = "rol", .opcode = 00061, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ROLB, .mnemonic = "rolb", .opcode = 01061, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASR, .mnemonic = "asr", .opcode = 00062, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASRB, .mnemonic = "asrb", .opcode = 01062, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASL, .mnemonic = "asl", .opcode = 00063, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_ASLB, .mnemonic = "aslb", .opcode = 01063, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_MTPS, .mnemonic = "mtps", .opcode = 01064, .is_byte = false},
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_MFPS, .mnemonic = "mfps", .opcode = 01067, .is_byte = false },
-    { .type = INSTRT_SINGLE, .instrs = INSTRS_RTS, .mnemonic = "rts", .opcode = 000020, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_CLC, .mnemonic = "clc", .opcode = 0000241, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_CLV, .mnemonic = "clv", .opcode = 0000242, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_CLZ, .mnemonic = "clz", .opcode = 0000244, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_CLN, .mnemonic = "cln", .opcode = 0000250, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_CCC, .mnemonic = "ccc", .opcode = 0000257, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_SEC, .mnemonic = "sec", .opcode = 0000261, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_SEV, .mnemonic = "sev", .opcode = 0000262, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_SEZ, .mnemonic = "sez", .opcode = 0000264, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_SEN, .mnemonic = "sen", .opcode = 0000270, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_SCC, .mnemonic = "scc", .opcode = 0000277, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_HALT, .mnemonic = "halt", .opcode = 0000000, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_WAIT, .mnemonic = "wait", .opcode = 0000001, .is_byte = false },
-    { .type = INSTRT_WITHOUT, .instrw = INSTRW_NOP, .mnemonic = "nop", .opcode = 0000240, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BR, .mnemonic = "br", .opcode = 0001, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BNE, .mnemonic = "bne", .opcode = 0002, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BEQ, .mnemonic = "beq", .opcode = 0003, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BGE, .mnemonic = "bge", .opcode = 0004, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BLT, .mnemonic = "blt", .opcode = 0005, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BGT, .mnemonic = "bgt", .opcode = 0006, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BLE, .mnemonic = "ble", .opcode = 0007, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BPL, .mnemonic = "bpl", .opcode = 0200, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BMI, .mnemonic = "bmi", .opcode = 0201, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BHI, .mnemonic = "bhi", .opcode = 0202, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BLOS, .mnemonic = "blos", .opcode = 0203, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BHIS, .mnemonic = "bhis", .opcode = 0206, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BLO, .mnemonic = "blo", .opcode = 0207, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BVC, .mnemonic = "bvc", .opcode = 0204, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BVS, .mnemonic = "bvs", .opcode = 0205, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BCC, .mnemonic = "bcc", .opcode = 0206, .is_byte = false },
-    { .type = INSTRT_BRANCH, .instrb = INSTRB_BCS, .mnemonic = "bcs", .opcode = 0207, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "mov", .opcode = 001, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "movb", .opcode = 011, .is_byte = true },
+    { .type = INSTRT_DOUBLE, .info = INSTR_CMP, .mnemonic = "cmp", .opcode = 002, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_CMPB, .mnemonic = "cmpb", .opcode = 012, .is_byte = true },
+    { .type = INSTRT_DOUBLE, .info = INSTR_BIT, .mnemonic = "bit", .opcode = 003, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_BITB, .mnemonic = "bitb", .opcode = 013, .is_byte = true },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "bic", .opcode = 004, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "bicb", .opcode = 014, .is_byte = true },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "bis", .opcode = 005, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "bisb", .opcode = 015, .is_byte = true },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "add", .opcode = 006, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_NONE, .mnemonic = "sub", .opcode = 016, .is_byte = false },
+    { .type = INSTRT_DOUBLE, .info = INSTR_JSR, .mnemonic = "jsr", .opcode = 0004, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "jmp", .opcode = 00001, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "swab", .opcode = 00003, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "clr", .opcode = 00050, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "clrb", .opcode = 01050, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "com", .opcode = 00051, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "comb", .opcode = 01051, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "inc", .opcode = 00052, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "incb", .opcode = 01052, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "dec", .opcode = 00053, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "decb", .opcode = 01053, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "neg", .opcode = 00054, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "negb", .opcode = 01054, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "adc", .opcode = 00055, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "adcb", .opcode = 01055, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "sbc", .opcode = 00056, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "sbcb", .opcode = 01056, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "tst", .opcode = 00057, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "tstb", .opcode = 01057, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "ror", .opcode = 00060, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "rorb", .opcode = 01060, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "rol", .opcode = 00061, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "rolb", .opcode = 01061, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "asr", .opcode = 00062, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "asrb", .opcode = 01062, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "asl", .opcode = 00063, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "aslb", .opcode = 01063, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "mtps", .opcode = 01064, .is_byte = false},
+    { .type = INSTRT_SINGLE, .info = INSTR_NONE, .mnemonic = "mfps", .opcode = 01067, .is_byte = false },
+    { .type = INSTRT_SINGLE, .info = INSTR_RTS, .mnemonic = "rts", .opcode = 000020, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "clc", .opcode = 0000241, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "clv", .opcode = 0000242, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "clz", .opcode = 0000244, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "cln", .opcode = 0000250, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "ccc", .opcode = 0000257, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "sec", .opcode = 0000261, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "sev", .opcode = 0000262, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "sez", .opcode = 0000264, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "sen", .opcode = 0000270, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "scc", .opcode = 0000277, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "halt", .opcode = 0000000, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "wait", .opcode = 0000001, .is_byte = false },
+    { .type = INSTRT_WITHOUT, .info = INSTR_NONE, .mnemonic = "nop", .opcode = 0000240, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "br", .opcode = 0001, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bne", .opcode = 0002, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "beq", .opcode = 0003, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bge", .opcode = 0004, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "blt", .opcode = 0005, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bgt", .opcode = 0006, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "ble", .opcode = 0007, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bpl", .opcode = 0200, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bmi", .opcode = 0201, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bhi", .opcode = 0202, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "blos", .opcode = 0203, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bhis", .opcode = 0206, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "blo", .opcode = 0207, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bvc", .opcode = 0204, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bvs", .opcode = 0205, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bcc", .opcode = 0206, .is_byte = false },
+    { .type = INSTRT_BRANCH, .info = INSTR_NONE, .mnemonic = "bcs", .opcode = 0207, .is_byte = false },
     { .type = INSTRT_DIRECTIVE, .dir = DIR_BYTE, .mnemonic = ".byte", .ptr = NULL, .value = 0, .is_byte = true },
     { .type = INSTRT_DIRECTIVE, .dir = DIR_WORD, .mnemonic = ".word", .ptr = NULL, .value = 0, .is_byte = false },
     { .type = INSTRT_DIRECTIVE, .dir = DIR_BLKB, .mnemonic = ".blkb", .ptr = NULL, .value = 0, .is_byte = false },
@@ -113,6 +113,11 @@ int read_file(const char *filename) {
         diagnostic_print(dq);
         diagnostic_free(dq);
         fclose(input);
+        for (uint32_t i = 0; i < instrno; i++) {
+            if (entry[i].instr.type == INSTRT_DIRECTIVE) {
+                free(entry[i].instr.ptr);
+            }
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -125,7 +130,6 @@ int read_file(const char *filename) {
         addr = rtab[i].cur_addr;
         resolve_mem_off(rtab[i].op, rtab[i].label);
     }
-
 
     return 0;
 }
@@ -304,12 +308,12 @@ int parse_operands(char *operands) {
     switch (type) {
         case INSTRT_DOUBLE:
             if (parse_operand(op1, &ent->op1) == -1) return -1;
-            if (ent->instr.instrd == INSTRD_JSR && ent->op1.mode != AMOD_REG) {
+            if (ent->instr.info == INSTR_JSR && ent->op1.mode != AMOD_REG) {
                 return -1;
             }
             if (parse_operand(op2, &ent->op2) == -1) return -1;
-            if (ent->instr.instrd != INSTRD_CMP && ent->instr.instrd != INSTRD_CMPB &&
-                ent->instr.instrd != INSTRD_BIT && ent->instr.instrd != INSTRD_BITB &&
+            if (ent->instr.info != INSTR_CMP && ent->instr.info != INSTR_CMPB &&
+                ent->instr.info != INSTR_BIT && ent->instr.info != INSTR_BIT &&
                 (ent->op2.type == OPT_IMM || ent->op2.type == OPT_MEM) && 
                 ent->op2.mode == AMOD_INC) return -1;
             break;
@@ -317,7 +321,7 @@ int parse_operands(char *operands) {
             if (parse_operand(op1, &ent->op1) == -1) return -1;
             if ((ent->op1.type == OPT_IMM || ent->op1.type == OPT_MEM) &&
                 ent->op1.mode == AMOD_INC) return -1;
-            if (ent->instr.instrs == INSTRS_RTS && ent->op1.mode != AMOD_REG) {
+            if (ent->instr.info == INSTR_RTS && ent->op1.mode != AMOD_REG) {
                 return -1;
             }
             break;
